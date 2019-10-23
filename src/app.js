@@ -12,6 +12,7 @@ const fs = require(`fs`);
 const yargs = require(`yargs`);
 const { commandOptions } = require(`./create/options.template`);
 const create = require(`./create`);
+const { listInterfaces, activeInterface } = require('./utils/network.utils');
 
 // if (fs.existsSync(path)) {
 //     return true;
@@ -27,5 +28,14 @@ yargs.command({
     create(argv, Object.keys(commandOptions));
   }
 });
+
+async function getInterfaces() {
+  try {
+    const { all, active } = await listInterfaces();
+    console.log(all)
+  } catch (e) { console.error(e) }
+}
+
+getInterfaces();
 
 yargs.parse();
