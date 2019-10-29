@@ -1,20 +1,60 @@
-const { exec } = require('./child_process.utils');
-const { isOBJEmpty } = require('./obj.utils');
+const { exec } = require("./child_process.utils");
+const { VBoxManage } = require("../../devbox.config");
+const { isOBJEmpty } = require("./obj.utils");
 const Enum = {
   NAME: "Name",
   DEFAULTGATEWAY: "Default Gateway",
   IPV6: "IPv6"
-}
+};
 
 async function listInterfaces() {
   try {
     stdout = await exec("ipconfig");
     all = parseIPConfig(stdout);
     active = activeInterface(all);
-    return { all, active }
+    return { all, active };
   } catch (e) {
     return Promise.reject(e);
   }
+}
+
+async function listHostOnlyIfs() {
+  try {
+    const stdout = await exec(`"${VBoxManage}" list hostonlyifs`);
+    const ifs = parseHostOnlyIfs(stdout);
+    return ifs;
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+
+function parseHostOnlyIfs(stdout) {
+  const lines = stdout.split("\r\n");
+  const arr = [];
+  let obj = {};
+
+  lines.forEach(line => {
+    if (line.includes("IPV6") || line.includes("HardwareAddress")) {
+      return;
+    }
+
+    if (line === "") {
+      if (!isOBJEmpty(obj)) {
+        arr.push(obj);
+        obj = {};
+      }
+      return;
+    }
+
+    const childArr = line.split(":");
+    const key = childArr[0].trim();
+    const value = childArr[1].trim();
+
+    obj = { ...obj, [key]: value };
+  });
+
+  if (!isOBJEmpty(obj)) arr.push(obj);
+  return arr;
 }
 
 // Expects parseIPConfig obj
@@ -24,15 +64,15 @@ function activeInterface(ipInfo) {
       if (interface[Enum.DEFAULTGATEWAY] !== "") return true;
     }
     return false;
-  })
+  });
   return active;
 }
 
 function parseIPConfig(stdout) {
   const lines = stdout.split("\r\n");
-  const arr = [];     // first pass
-  const result = [];  // final pass
-  let obj = {};       // final pass - cat by network interface
+  const arr = []; // first pass
+  const result = []; // final pass
+  let obj = {}; // final pass - cat by network interface
 
   // First pass - parse through ipconfig string
   lines.forEach((line, i) => {
@@ -49,7 +89,7 @@ function parseIPConfig(stdout) {
       return;
     }
     if (i !== 0 && i !== lines.length - 1) {
-      // get name for network interfaces 
+      // get name for network interfaces
       if (lines[i - 1] === "" && lines[i + 1] === "") {
         arr.push([Enum.NAME, childArr[0]]);
         return;
@@ -95,5 +135,6 @@ function parseIPConfig(stdout) {
 }
 
 module.exports = {
-  listInterfaces
-}
+  listInterfaces,
+  listHostOnlyIfs
+};

@@ -13,9 +13,9 @@ class Option {
   validate(input) {
     switch (this.type) {
       case Enum.STRING:
-        return typeof input === Enum.STRING;
+        return typeof input === Enum.STRING && input !== "";
       case Enum.NUM:
-        return !isNaN(input);
+        return !isNaN(input) && input !== "";
       default:
         return console.error(`Unable to validate input`);
     }
