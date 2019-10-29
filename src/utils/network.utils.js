@@ -28,6 +28,51 @@ async function listHostOnlyIfs() {
   }
 }
 
+async function hostInfo() {
+  try {
+    const stdout = await exec(`"${VBoxManage}" list hostinfo`);
+    const info = parseHostInfo(stdout);
+
+    return info;
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+
+function parseHostInfo(stdout) {
+  const lines = stdout.split("\r\n");
+  let obj = {};
+
+  lines.forEach(line => {
+    if (line === "") return;
+
+    const childArr = line.split(":");
+    const value = childArr[1].trim();
+
+    switch (childArr[0]) {
+      case 'Processor count':
+        const cpu = Number(value) / 2
+        obj = { ...obj, maxCPU: cpu };
+        return;
+      case 'Memory size':
+        const strValue = value.split(' ');
+        const ram = Math.floor((Number(strValue[0]) / 1024) / 2)
+        obj = { ...obj, maxRAM: ram };
+      default:
+        return;
+    }
+  });
+
+  obj = {
+    ...obj,
+    minCPU: 1,
+    minRAM: 1,
+    minStorage: 2
+  }
+
+  return obj;
+}
+
 function parseHostOnlyIfs(stdout) {
   const lines = stdout.split("\r\n");
   const arr = [];
@@ -136,5 +181,6 @@ function parseIPConfig(stdout) {
 
 module.exports = {
   listInterfaces,
-  listHostOnlyIfs
+  listHostOnlyIfs,
+  hostInfo
 };

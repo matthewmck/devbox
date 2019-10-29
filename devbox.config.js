@@ -1,6 +1,11 @@
 const path = require('path');
 
 module.exports = {
-    VBoxManage: path.join(process.env.VBOX_MSI_INSTALL_PATH, 'VBoxManage.exe'),
-    userVMs: path.join(process.env.USERPROFILE, 'VirtualBox VMs')
+  VBoxManage: path.join(process.env.VBOX_MSI_INSTALL_PATH, 'VBoxManage.exe'),
+  userVMs: path.join(process.env.USERPROFILE, 'VirtualBox VMs'),
+  defaults: {
+    memory: 2,
+    cpu: 1,
+    storage: 15
+  }
 }

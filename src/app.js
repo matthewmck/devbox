@@ -13,7 +13,7 @@ const yargs = require(`yargs`);
 const { commandOptions } = require(`./create/options.template`);
 const create = require(`./create`);
 
-const { listHostOnlyIfs } = require("./utils/network.utils");
+const { listHostOnlyIfs, hostInfo } = require("./utils/network.utils");
 
 // if (fs.existsSync(path)) {
 //     return true;
@@ -29,5 +29,7 @@ yargs.command({
     create(argv, Object.keys(commandOptions));
   }
 });
+
+hostInfo();
 
 yargs.parse();

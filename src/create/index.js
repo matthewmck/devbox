@@ -1,26 +1,24 @@
 const options = require(`./options.init`);
+const inquirer = require("inquirer");
 const prompt = require(`./options.prompt`);
 const { listInterfaces } = require(`../utils/network.utils`);
 const { listHostOnlyIfs } = require("../utils/network.utils");
 
-const inquirer = require("inquirer");
-
-module.exports = async function(argv, optionList) {
+module.exports = async function (argv, optionList) {
   let vm = {};
-  const emptyValues = [];
 
-  for (const option of optionList) {
-    if (argv[option] === "" || argv[option] === undefined) {
-      emptyValues.push(option);
-    } else {
-      vm[option] = argv[option];
-    }
-  }
 
-  if (emptyValues.length) {
-    let userInput = await prompt(emptyValues);
-    vm = { ...vm, ...userInput };
-  }
+  try {
+    const userInput = await prompt();
+    console.log(userInput);
+
+
+
+    // const hostOnlyAdapters = await listHostOnlyIfs();
+    // vm.hostOnly = hostOnlyAdapters[0]["Name"];
+
+    // vm = { ...vm, ...userInput };
+  } catch (e) { console.error(e) }
 
   // try {
   //   const { active } = await listInterfaces();
@@ -42,15 +40,15 @@ module.exports = async function(argv, optionList) {
   //   console.error(e);
   // }
 
-  try {
-    const hostOnlyAdapters = await listHostOnlyIfs();
-    vm.hostOnly = hostOnlyAdapters[0]["Name"];
-  } catch (e) {
-    console.error(e);
-  }
+  // try {
+  //   const hostOnlyAdapters = await listHostOnlyIfs();
+  //   vm.hostOnly = hostOnlyAdapters[0]["Name"];
+  // } catch (e) {
+  //   console.error(e);
+  // }
 
-  vm.memory = options.memory.GBtoMB(vm.memory);
-  vm.storage = options.storage.GBtoMB(vm.storage);
+  // vm.memory = options.memory.GBtoMB(vm.memory);
+  // vm.storage = options.storage.GBtoMB(vm.storage);
 
-  console.log(vm);
+  // console.log(vm);
 };
