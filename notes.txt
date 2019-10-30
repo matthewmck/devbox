@@ -1,0 +1,94 @@
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm "VM name" --nataliasmode1 proxyonly
+
+* Set up ssh
+
+# Warning: unmount of guest additions may be problematic
+
+# Manual
+https://www.virtualbox.org/manual/ch08.html
+
+# Additional Resources
+https://www.neowin.net/forum/topic/1193623-install-updates-in-vm/#comment-596176165
+https://forums.virtualbox.org/viewtopic.php?f=6&t=83837
+https://www.nakivo.com/blog/virtualbox-network-setting-guide/
+http://christophermaier.name/2010/09/01/host-only-networking-with-virtualbox/
+https://www.virtualbox.org/manual/ch13.html
+
+# Ubuntu server download
+https://ubuntu.com/download/server
+
+# Run VirtualBox in headless mode
+https://schier.co/blog/2013/03/13/start-virtualbox-vm-in-headless-mode.html
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm test-server --type headless
+
+"C:\Program Files\Oracle\VirtualBox\VBoxHeadless.exe" startvm test-server
+
+# VM init
+# https://www.linuxtechi.com/manage-virtualbox-virtual-machines-command-line/
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" createvm --name test-server --ostype Ubuntu_64 --register
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm test-server --nic1 nat
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm test-server --nic2 hostonly --hostonlyadapter2 "VirtualBox Host-Only Ethernet Adapter"
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm test-server --memory 2048
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm test-server --cpus 2
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" createmedium --filename "C:\Users\Matt\VirtualBox VMs\test-server\test-server.vdi" --size 10000 --format VDI 
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" storagectl test-server --name "SATA Controller" --add sata --controller IntelAhci
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" storageattach test-server --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium "C:\Users\Matt\VirtualBox VMs\test-server\test-server.vdi"
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" storagectl test-server --name "IDE Controller" --add ide --controller PIIX4
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" storageattach test-server --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium "C:\Users\Matt\Downloads\ubuntu-18.04.3-live-server-amd64.iso"
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm test-server
+
+VBoxManage modifyvm  <uuid|vmname> [--iconfile <filename>]
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm test --iconfile "C:\Users\Matt\Downloads\box.png"
+
+# Update Linux
+sudo apt-get update
+sudo apt-get upgrade
+
+# Setup shared folder (run after VM init)
+# https://askubuntu.com/questions/203586/how-do-i-install-the-virtualbox-dkms-package
+# https://blog.oracle48.nl/installing-virtualbox-guest-additions-using-the-command-line/
+[GUEST] -> sudo apt install --reinstall virtualbox-dkms
+[HOST] -> "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" storageattach test-server --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium "C:\Program Files\Oracle\VirtualBox\VBoxGuestAdditions.iso"
+[GUEST] -> mkdir /mnt/dvd
+[GUEST] -> mount -t iso9660 -o ro /dev/dvd /mnt/dvd
+[GUEST] -> cd /mnt/dvd
+[GUEST] -> ./VBoxLinuxAdditions.run
+[GUEST] -> umount /dev/dvd
+# Will need to close GUEST
+[HOST] -> "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" sharedfolder add test-server --name "shared" --hostpath "C:\Users\Matt\Documents\dev"
+# go back into GUEST
+eject
+sudo apt install --reinstall virtualbox-dkms
+mkdir /home/matt/vboxshare
+sudo mount -t vboxsf shared /home/matt/vboxshare
+sudo nano /etc/fstab
+shared /home/matt/vboxshare vboxsf defaults 0 0
+
+#Set up port forwarding and firewall
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" modifyvm test-server --natpf1 "local,TCP,192.168.0.24,8000,,8000"
+-grab ip address of enpos3 (NAT) and enp0s8 (HOST ONLY)
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow in on enp0s8 from 192.168.56.1 to any port 8000
+sudo ufw enable
+# to enable private network serve - sudo ufw allow 8000
+
+#ssh-agent on windows
+- to check for existing keys, create keys, and add keys to ssh-agent check out:
+https://help.github.com/en/articles/checking-for-existing-ssh-keys
+-NOTE: if running eval gives error then check out this:
+https://github.com/lukesampson/pshazz/issues/70
+-running "Set-Service ssh-agent -StartupType Manual" seems to work
+-NOTE: How To Use SSH to Connect to a Remote Server in Ubuntu
+https://www.digitalocean.com/community/tutorials/how-to-use-ssh-to-connect-to-a-remote-server-in-ubuntu
+-NOTE: to copy over public SSH key check out this
+https://serverfault.com/questions/224810/is-there-an-equivalent-to-ssh-copy-id-for-windows
+-may have to creat .ssh directory and authorized_keys file on vm
+
+# may need to creat a wait while vm loads (if started via headless). create a bash scripts that keeps checking until is able to log in
+-some funny loading messages to loop through while that occurs
+https://gist.github.com/ClintonLang/399a539046e21083ffe99cd7f5369788
+https://github.com/1egoman/funnies/blob/master/src/funnies.js
+
+#excuting bash scripts over ssh
+https://www.linuxtechi.com/execute-linux-commands-remote-system-over-ssh/

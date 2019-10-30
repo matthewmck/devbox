@@ -50,13 +50,13 @@ function parseHostInfo(stdout) {
     const value = childArr[1].trim();
 
     switch (childArr[0]) {
-      case 'Processor count':
-        const cpu = Number(value) / 2
+      case "Processor count":
+        const cpu = Number(value) / 2;
         obj = { ...obj, maxCPU: cpu };
         return;
-      case 'Memory size':
-        const strValue = value.split(' ');
-        const ram = Math.floor((Number(strValue[0]) / 1024) / 2)
+      case "Memory size":
+        const strValue = value.split(" ");
+        const ram = Math.floor(Number(strValue[0]) / 1024 / 2);
         obj = { ...obj, maxRAM: ram };
       default:
         return;
@@ -68,7 +68,7 @@ function parseHostInfo(stdout) {
     minCPU: 1,
     minRAM: 1,
     minStorage: 2
-  }
+  };
 
   return obj;
 }
@@ -79,10 +79,6 @@ function parseHostOnlyIfs(stdout) {
   let obj = {};
 
   lines.forEach(line => {
-    if (line.includes("IPV6") || line.includes("HardwareAddress")) {
-      return;
-    }
-
     if (line === "") {
       if (!isOBJEmpty(obj)) {
         arr.push(obj);
@@ -91,11 +87,16 @@ function parseHostOnlyIfs(stdout) {
       return;
     }
 
-    const childArr = line.split(":");
-    const key = childArr[0].trim();
-    const value = childArr[1].trim();
+    if (
+      (line.includes("Name") && !line.includes("VBoxNetworkName")) ||
+      line.includes("IPAddress")
+    ) {
+      const childArr = line.split(":");
+      const key = childArr[0].trim();
+      const value = childArr[1].trim();
 
-    obj = { ...obj, [key]: value };
+      obj = { ...obj, [key]: value };
+    }
   });
 
   if (!isOBJEmpty(obj)) arr.push(obj);
